@@ -1,37 +1,41 @@
 const { CACHE_TTL_MS } = require('../config/default');
 
-//Data in the cache
-let data = null;
-//Last updatae of the cache
-let lastUpdate = 0;
-//flags if the loop is running and flag for stop the loop
-let _loopRunning = false;
-let _loopStop = false;
+let data = null; //The data itself
+let lastUpdate = 0; //The last time we update
+//Flags to check if the loop is running to prevent multiple auto refresh loops or we stop the loop
+let loopRunning = false;
+let loopStop = false;
+let io = null; //Socket.IO server instance
 
-/**
- * Function to check if the cache is still valid
- * Cache is considered valid if the time now - the last update is less then the CACHE_TTL_MS
- * @returns {boolean} - Weather the cache is valid
- */
+function setIO(socketIO) {
+  //Give the Socket.io server instance so this cache can emit to clients
+  io = socketIO;
+}
+
 function isValid() {
+  //Returns true if we have a data and it not expired
   return data && Date.now() - lastUpdate < CACHE_TTL_MS;
 }
 
 /**
- *Function to set a new data in the cache
- * Throws an error if the data is empty
- * @param {Array} newData - The new data in the cache
+ * Replace the cache with new data and updata the timestamp
+ * Also emits the cache-ttl-updated if the Socke.IO is connected
  */
+
 function set(newData) {
   if (!newData) throw new Error('Cannot set empty data to cache');
   data = newData;
-  lastUpdate = Date.now(); //Update the timestamp of the last caceh
+  lastUpdate = Date.now();
+  if (io) {
+    // Notify connected clients that the cache was refreshed
+    io.emit('cache-ttl-updated', {
+      timestamp: Date.now(),
+      message: 'Cache refreshed after TTL',
+    });
+  }
 }
 
-/**
- *Function to retrive the data from the cache if its valid
- * @returns {Array|null} - Returns the data if the cache is valid,else returns null
- */
+//Return the data if valid else returns null
 function get() {
   if (isValid()) {
     return data;
@@ -40,9 +44,8 @@ function get() {
 }
 
 /**
- *Function to delete a player from the cache using the player id
- * @param {*} playerId - The id of the player to remove
- * @returns {boolean} - Wether the player was removed from the cache
+ * Remove a player from the cache by id
+ * This effects only the cache when the cache refresh the player will comeback
  */
 function deletePlayer(playerId) {
   if (!data) return false;
@@ -54,57 +57,44 @@ function deletePlayer(playerId) {
 }
 
 /**
- * The main auto-refresh loop
- * Fetches a fresh data and updates the cache based on the CACHE_TTL_MS
- * @param {*} fetcher - The function that fetch data from the API
- * @param {*} intervalMs - The time interval in milliseconds
+ * loops and
  */
-async function _refreshLoop(fetcher, intervalMs = CACHE_TTL_MS) {
-  if (_loopRunning) {
+async function refreshLoop(fetcher, intervalMs = CACHE_TTL_MS) {
+  if (loopRunning) {
     console.log('[cache] Auto-refresh already running...');
-    return; //If the loop is already running ,prevent starting new one
+    return;
   }
 
-  _loopRunning = true;
-  _loopStop = false;
+  loopRunning = true;
+  loopStop = false;
 
-  // Infinite loop that refreshes the cache until stopped
-  while (!_loopStop) {
+  await new Promise((resolve) => setTimeout(resolve, intervalMs));
+
+  while (!loopStop) {
     const start = Date.now();
     try {
       console.log('[cache] Starting auto-refresh cycle...');
       const freshData = await fetcher();
       set(freshData);
-      console.log(freshData);
       console.log('[cache] Cache refreshed with new data.');
     } catch (err) {
       console.error('[cache] auto-refresh failed:', err.message);
     }
     const elapsed = Date.now() - start;
-    const wait = Math.max(0, intervalMs - elapsed); // Calculate how long to wait before the next refresh cycle
-    await new Promise((resolve) => setTimeout(resolve, wait)); // Wait before starting the next cycle
+    const wait = Math.max(0, intervalMs - elapsed);
+    await new Promise((resolve) => setTimeout(resolve, wait));
   }
 
-  _loopRunning = false; // When the loop is stopped, reset the state
+  loopRunning = false;
 }
-
-/**
- * Start the auto refresh cycle
- * If the loop is not running ,it start the refresh loop function
- * @param {*} fetcher - The function that fetch data from the API
- * @param {*} intervalMs - The time interval in milliseconds
- */
 
 function startAutoRefresh(fetcher, intervalMs = CACHE_TTL_MS) {
-  if (_loopRunning) return;
-  _refreshLoop(fetcher, intervalMs);
+  if (loopRunning) return;
+  refreshLoop(fetcher, intervalMs);
 }
 
-/**
- * Stops the auto-refresh cycle.
- */
 function stopAutoRefresh() {
-  _loopStop = true;
+  loopStop = true;
 }
 
 module.exports = {
@@ -113,4 +103,5 @@ module.exports = {
   deletePlayer,
   startAutoRefresh,
   stopAutoRefresh,
+  setIO,
 };
