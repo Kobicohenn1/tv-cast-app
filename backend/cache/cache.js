@@ -23,7 +23,10 @@ function isValid() {
  */
 
 function set(newData) {
-  if (!newData) throw new Error('Cannot set empty data to cache');
+  if (!newData) {
+    const error = { status: 400, message: 'Cannot set empty data to cache' };
+    throw error;
+  }
   data = newData;
   lastUpdate = Date.now();
   if (io) {

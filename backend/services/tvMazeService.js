@@ -17,7 +17,9 @@ const fetchFromAPI = async () => {
     }));
   } catch (error) {
     console.log('[fetchFromAPI] Error fetching data:', error.message);
-    throw new Error('Failed to fetch data from API');
+    const status = error.response?.status || 503;
+    const message = 'Failed to fetch data from TV Maze API';
+    throw { status, message };
   }
 };
 
@@ -36,7 +38,9 @@ const getCast = async () => {
     return data;
   } catch (error) {
     console.log('[getCast] Error retrieving data:', error.message);
-    throw new Error('Failed to get cast data');
+    const status = error.status || 500;
+    const message = error.message || 'Failed to get cast data';
+    throw { status, message };
   }
 };
 

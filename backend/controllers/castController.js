@@ -46,7 +46,7 @@ const deletePlayer = async (req, res) => {
 };
 
 //Add comment for a specific player with his id
-const addComment = (req, res) => {
+const addComment = async (req, res) => {
   const playerId = req.params.id;
   const { comment } = req.body;
 
@@ -63,7 +63,7 @@ const addComment = (req, res) => {
     if (!player) {
       return res.status(404).json({ message: 'Player not found' });
     }
-    saveComment(player, comment);
+    await saveComment(player, comment);
     return res.status(200).json({ message: 'Comment saved successfully!' });
   } catch (error) {
     console.error('Error saving comment:', error);

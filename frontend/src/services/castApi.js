@@ -7,7 +7,9 @@ export const fetchCast = async () => {
     return response.data;
   } catch (error) {
     console.error('Error fetching cast data', error);
-    throw new Error('Error fetching cast data');
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.message || 'Error fetching cast data';
+    throw { status, message };
   }
 };
 
@@ -17,7 +19,9 @@ export const deletePlayer = async (id) => {
     return response.data; // Return the response message
   } catch (error) {
     console.error('Error deleting player', error);
-    throw new Error('Error deleting player');
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.message || 'Error deleting player';
+    throw { status, message };
   }
 };
 
@@ -28,6 +32,8 @@ export const addComment = async (playerId, comment) => {
     });
   } catch (error) {
     console.error('Error adding comment:', error);
-    throw error;
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.message || 'Error adding comment';
+    throw { status, message };
   }
 };
