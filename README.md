@@ -5,12 +5,14 @@ A React + Node.js application for managing TV show cast data with caching and re
 ## Features
 
 - **WebAPI Service**: Integration with TV Maze API for cast data
-- **Cache System**: 5-minute cache with automatic refresh
+- **Cache System**: 5 minute cache with automatic refresh 
 - **Real-time Updates**: Socket.io integration for live cache synchronization
 - **Player Management**: View, select, and delete players from cache
 - **Comment System**: Add comments to players with file storage
 - **Status Monitoring**: Real-time timer showing cache freshness
-
+- **Preloading**: Cache initialization on server startup
+- **Modular Architecture**: Separation of concerns with service layer pattern
+- **Error Handling**: Comprehensive API error management
 ## Screenshots
 
 ### Loading State
@@ -43,6 +45,12 @@ _Selected player details with comment form and cache management_
 - **State Management**: React hooks for data and UI state
 - **Real-time Updates**: Socket.io client for live synchronization
 - **Status Bar**: Timer showing cache freshness and last update time
+
+## Performance & Benefits
+
+- **Reduced API Calls**: Intelligent caching minimizes external requests
+- **Real-time Experience**: Instant updates across all connected users
+- **Scalable Design**: Easy to extend with database or Redis integration
 
 ## Setup
 
